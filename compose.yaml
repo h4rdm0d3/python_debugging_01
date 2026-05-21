@@ -1,0 +1,41 @@
+# Local development stack for python_debugging_01.
+#
+# Brings up:
+#   - fixture: the same Wikipedia-shaped fixture the platform's grader
+#     uses, pulled from the public h4rdm0d3 GHCR.
+#   - crawler: the service in this repo, built from the local Dockerfile,
+#     constrained to the same resource envelope the platform enforces at
+#     grade time (CPU 0.2, memory 256 MiB).
+#
+# Run:
+#   docker compose up --build
+#
+# Then in another shell, POST to the crawler with URLs that point at the
+# fixture's k8s-style hostname:
+#   curl -sX POST localhost:8080/crawl \
+#     -H 'content-type: application/json' \
+#     -d '{"urls":["http://fixture:9090/wiki/Python_(programming_language)"]}' | jq
+
+services:
+  fixture:
+    image: ghcr.io/ltbringer/python_debugging_01-fixture:v0.1.0
+    networks: [pd01]
+    ports:
+      - "9090:9090"   # browse /catalog from the host while iterating
+
+  crawler:
+    build: .
+    networks: [pd01]
+    ports:
+      - "8080:8080"
+    depends_on:
+      - fixture
+    # Match the platform's grade-time envelope. Comment these out for a
+    # faster iteration loop, then restore before judging your own work —
+    # the performance bar the validator measures against is calibrated
+    # for this envelope.
+    mem_limit: 256m
+    cpus: 0.2
+
+networks:
+  pd01: {}

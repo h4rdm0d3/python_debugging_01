@@ -1,0 +1,32 @@
+schema_version: "1"
+category: cluster
+
+session:
+  exposed_services:
+    - name: crawler
+      port: 8080
+      protocol: http
+  idle_timeout_seconds: 600
+  max_session_length_seconds: 7200
+
+grade_output: progress
+
+sla:
+  service: crawler
+  endpoints:
+    - method: POST
+      path: /crawl
+      request:
+        urls: list[string]
+        mode: string  # "batch" (default) or "stream"
+      response:
+        results: list[object]  # [{url, title, error?}]
+        stats: object          # {instance_seen: list[string]}
+    - method: GET
+      path: /healthz
+      response:
+        ok: boolean
+  # The validator owns the spec: ground-truth outputs are computed
+  # from the fixture's catalog; performance bars are enforced inside
+  # the platform-provisioned resource envelope. No behavioral
+  # enumeration here.

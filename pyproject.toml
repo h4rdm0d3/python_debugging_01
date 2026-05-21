@@ -1,0 +1,19 @@
+[project]
+name = "python-debugging-01"
+version = "1.0.0"
+description = "hardmode course: a buggy Python web crawler. Find the bugs to graduate."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "httpx>=0.27",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+]
+
+[tool.uv]
+package = false
