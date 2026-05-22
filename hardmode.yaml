@@ -1,6 +1,19 @@
 schema_version: "1"
 category: cluster
 
+images:
+  fixtures:
+    - name: wikipedia
+      repository: ghcr.io/ltbringer/python_debugging_01-fixture
+      tag: v0.3.0
+  problems:
+    - name: crawler
+      repository: ghcr.io/h4rdm0d3/python_debugging_01
+      tag: v1.1.0
+  validator:
+    repository: ghcr.io/ltbringer/python_debugging_01-validator
+    tag: v0.3.0
+
 session:
   exposed_services:
     - name: crawler
