@@ -41,20 +41,23 @@ Returns `{"ok": true}`. Used by the grader to know the service is up.
 
 ## How you're graded
 
-The validator runs a battery of tasks against your service. Each task:
+The validator sends one workload to your service inside a constrained resource envelope and scores it across a handful of blackbox dimensions. Either your service meets the SLA bar or it doesn't — there's no per-bug attribution, no checklist of fixes.
 
-- Sends a specific workload.
-- Knows the correct response by computing it from ground truth ahead of time.
-- Has a performance bar — latency, throughput, sometimes memory.
-- Passes when your service matches both the response and the bar.
+**The dimensions** (each independent, each binary):
 
-Score is the sum of weights of passing tasks, in `[0, 100]`. Label:
+- **Completeness** — every input URL appears in the response, with `error` populated when applicable.
+- **Dedup** — equivalent URLs collapse to one result; concurrent duplicates produce no extras.
+- **Isolation** — per-request state doesn't bleed across requests.
+- **Performance** — the workload finishes inside the wall-clock bar; no batch much slower than the baseline.
+- **Stability** — re-running the workload back-to-back doesn't degrade.
+
+Score is the count of passing dimensions × 20, in `[0, 100]`. Label:
 
 - **red** — `score < 25`
 - **amber** — `25 ≤ score < 100`
 - **green** — `score == 100`
 
-You see `{score, label}` only. No per-task breakdown. The validator deliberately does not point at bugs — it tells you whether your service met the bar, not what shape your fix should take.
+You see `{score, label}` only. No per-dimension breakdown, no validator-emitted explanations. The validator deliberately doesn't tell you *what* is failing — that's for you to figure out from your service's own behavior (and from the Grafana dashboards the platform exposes; see "Diagnostic surface" below).
 
 ## Resource envelope
 
@@ -64,7 +67,15 @@ The platform runs your service with:
 - Memory: 256Mi
 - Network: egress restricted to the platform's fixture (no internet at grade time)
 
-The performance bars are calibrated so an approximately-correct service can't clear them within these caps. Performance is part of correctness here. (Local development runs without caps, so the bar is harder to feel locally — beat the workload first, then think about whether your fix would survive a 256Mi container.)
+The dimension bars are calibrated for this envelope. Within 200m CPU and 256Mi memory, an approximately-correct service can't meet the performance and stability bars — fixing the bugs is the only way through. Local development runs without caps unless you opt in via the compose; do that before deciding your service is "done."
+
+## Diagnostic surface
+
+The platform attaches an HTTP sidecar to your service and ships per-session Prometheus + Grafana. The dashboards surface request rate, latency p50/p95/p99, error rates, status codes, and request-vs-response count gaps. They do not name bugs; they show symptoms. Form your hypotheses from the curves.
+
+The local compose ships the same stack so you can iterate offline against the same dashboards you'll see during grading.
+
+(Slice 4 of M5 — the dashboard stack lands here as part of the course's first release. If you're reading this from a fork before that ships, the dashboard piece may be in flight.)
 
 ## Running locally
 
