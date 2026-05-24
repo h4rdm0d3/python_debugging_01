@@ -70,3 +70,25 @@ controlPlane:
           drop: [ALL]
         seccompProfile:
           type: RuntimeDefault
+
+  # CoreDNS must fit the host namespace per-container envelope (500m
+  # max). Chart default limits.cpu = 1000m which the host LimitRange
+  # rejects → coredns pod stays Pending → in-vcluster DNS broken.
+  coredns:
+    deployment:
+      resources:
+        requests: {cpu: 20m, memory: 64Mi}
+        limits:   {cpu: 200m, memory: 170Mi}
+    security:
+      podSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        capabilities: {drop: [ALL]}
+        seccompProfile: {type: RuntimeDefault}
