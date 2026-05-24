@@ -39,23 +39,6 @@ controlPlane:
         ephemeral-storage: 1Gi
 
     # PSA "restricted" compliance.
-    security:
-      podSecurityContext:
-        runAsNonRoot: true
-        runAsUser: 65532
-        runAsGroup: 65532
-        fsGroup: 65532
-        seccompProfile:
-          type: RuntimeDefault
-      containerSecurityContext:
-        allowPrivilegeEscalation: false
-        runAsNonRoot: true
-        runAsUser: 65532
-        runAsGroup: 65532
-        capabilities:
-          drop: [ALL]
-        seccompProfile:
-          type: RuntimeDefault
 
   # The distro init container ("kubernetes") doesn't honor
   # controlPlane.statefulSet.security; its securityContext lives here.
