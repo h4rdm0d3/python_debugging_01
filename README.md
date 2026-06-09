@@ -42,51 +42,21 @@ your machine passes on the platform.
 
 ## Running on the hardmode platform
 
-### 1. Get your session + kubeconfig
+### 1. Start your session
 
-`hardmode session start python-debugging-01` provisions a host-cluster namespace
-and writes you a kubeconfig scoped to it:
+`hardmode session start python-debugging-01` provisions a Kubernetes **vcluster**
+for you and writes a kubeconfig that points straight at it — no manual vcluster
+install, no port-forwarding:
 
 ```sh
 export KUBECONFIG="$(hardmode session status --output-json | jq -r .kubeconfig_path)"
-NS="$(hardmode session status --output-json | jq -r .namespace)"
-kubectl get ns "$NS"           # you have admin in this one namespace
+kubectl get nodes              # you have cluster-admin on your own vcluster
 ```
 
-### 2. Launch your vcluster
+The vcluster is yours for the life of the session; the platform tears it down
+when the session ends.
 
-Inside that namespace you stand up your own virtual cluster. The values file in
-this repo is tuned for hardmode's namespace (no PVC — sessions are ephemeral —
-and PodSecurity-`restricted`-clean pod specs):
-
-```sh
-helm repo add loft-sh https://charts.loft.sh && helm repo update loft-sh
-helm install vc loft-sh/vcluster \
-  --namespace "$NS" -f vcluster.values.yaml \
-  --wait --timeout 5m
-```
-
-### 3. Point kubectl at the vcluster
-
-Port-forward the vcluster's apiserver and pull its admin kubeconfig into a file,
-then switch to it:
-
-```sh
-# terminal A — keep this running
-kubectl port-forward -n "$NS" svc/vc 8443:443
-
-# terminal B
-kubectl get secret vc-certs -n "$NS" -o jsonpath='{.data.admin\.conf}' \
-  | base64 -d > vcluster.kubeconfig
-sed -i 's|server: https://.*|server: https://127.0.0.1:8443|' vcluster.kubeconfig
-export KUBECONFIG="$PWD/vcluster.kubeconfig"
-kubectl get nodes              # now talking to YOUR vcluster
-```
-
-> Tip: `kubectx` makes hopping between the session kubeconfig and
-> `vcluster.kubeconfig` a one-word switch.
-
-### 4. Deploy the course — and your fix
+### 2. Deploy the course — and your fix
 
 The chart in `charts/python_debugging_01/` is the deployment: your **crawler**,
 the **wikipedia** fixture it depends on, and a **sidecar** that fronts the
@@ -115,7 +85,7 @@ are author-provided and locked. The crawler runs inside the **200m CPU /
 256Mi** envelope the grader enforces; tuning your deployment's footprint is part
 of the score (see *Resource envelope*).
 
-### 5. Submit for grading
+### 3. Submit for grading
 
 When you want a recorded run:
 
@@ -127,7 +97,7 @@ The platform points its validator at your running deployment, scores it, and
 records the best result on your enrollment. Re-submitting never lowers your
 score.
 
-### 6. Watch your dashboard
+### 4. Watch your dashboard
 
 `hardmode session status` gives you a Grafana URL scoped to your session
 (request rate, latency p50/p95/p99, error rates, request-vs-response gaps). The
