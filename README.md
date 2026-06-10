@@ -51,8 +51,10 @@ JSON:
 
 ```sh
 start="$(hardmode session start python-debugging-01 --output-json)"
-export KUBECONFIG="$(echo "$start" | jq -r .kubeconfig)"
-session_id="$(echo "$start" | jq -r .session.id)"
+# printf, not echo — the kubeconfig string contains \n escapes that some
+# shells' echo would expand and break the JSON.
+export KUBECONFIG="$(printf '%s' "$start" | jq -r .kubeconfig)"
+session_id="$(printf '%s' "$start" | jq -r .session.id)"
 
 kubectl get nodes              # cluster-admin on your own vcluster
 ```
